@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>J.Reel Chat - Full Screen Edition</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <style>
+        /* ======================================= */
+        /* === CSS พื้นฐาน และ Container (Full Screen) === */
+        /* ======================================= */
+        body {
+            font-family: 'Google Sans', 'Roboto', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #e8eaf6; 
+            display: flex;
+            justify-content: flex-start; 
+            align-items: flex-start; 
+            min-height: 100vh;
+            width: 100%; 
+        }
+        .chat-container {
+            width: 100%; 
+            height: 100vh; 
+            max-width: 100%; 
+            max-height: 100vh;
+            background: white;
+            box-shadow: none; 
+            border-radius: 0; 
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* --- Header/Navbar (พร้อม Blur) --- */
+        .chat-header {
+            background-color: rgba(255, 255, 255, 0.95);
+            color: #3c4043; 
+            padding: 15px 20px; 
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 1.2em;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05); 
+            z-index: 100; 
+            position: sticky; 
+            top: 0;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+        .header-title {
+            flex-grow: 1;
+            text-align: left;
+            margin-left: 10px; 
+            font-weight: 700;
+            color: #1a73e8; 
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .menu-button, .search-button, .settings-button {
+            background: none;
+            border: none;
+            color: #5f6368;
+            cursor: pointer;
+            padding: 10px;
+            border-radius: 50%; 
+            display: flex;
+            align-items: center;
+            transition: background-color 0.2s;
+        }
+        .menu-button:hover, .search-button:hover, .settings-button:hover {
+            background-color: #f0f0f0;
+        }
+        .menu-icon, .search-icon, .settings-icon {
+            font-size: 24px; 
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        
+        /* ======================================= */
+        /* === Side Menu และ Recent Chats === */
+        /* ======================================= */
+        #side-menu {
+            position: fixed; top: 0; left: 0; height: 100%; width: 0; max-width: 300px;
+            background-color: white; box-shadow: 4px 0 15px rgba(0, 0, 0, 0.2);
+            overflow-x: hidden; transition: 0.3s; z-index: 200; display: flex; flex-direction: column;
+        }
+        .menu-open { width: 280px !important; }
+        #menu-close-overlay { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0, 0, 0, 0.4); z-index: 150; display: none;
+        }
+        .menu-item { 
+            display: flex; align-items: center; padding: 12px 20px; cursor: pointer; color: #3c4043; 
+            font-size: 1em; transition: background-color 0.2s; border-radius: 25px; 
+            margin: 5px 15px; 
+        }
+        .menu-item:hover, .chat-item:hover:not(.active) { background-color: #f0f0f0; }
+        .menu-header { font-size: 0.9em; color: #5f6368; padding: 10px 20px 5px; font-weight: bold; }
+        
+        /* Recent Chat List Item */
+        .chat-item { 
+            display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; 
+            cursor: pointer; color: #3c4043; border-radius: 25px; 
+            margin: 5px 15px; 
+            transition: background-color 0.2s;
+        }
+        .chat-item.active { 
+            background-color: #e6eefc; 
+            color: #1a73e8; 
+            font-weight: 500;
+        }
+        
+        /* ======================================= */
+        /* === Chat Messages and Input === */
+        /* ======================================= */
+        .hidden { display: none !important; }
+        .chat-messages {
+            flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column;
+            scroll-behavior: smooth;
+            max-width: 800px; 
+            width: 100%;
+            margin: 0 auto; 
+        }
+        .message {
+            max-width: 75%; padding: 12px 18px; border-radius: 20px; margin-bottom: 12px; line-height: 1.4; position: relative; 
+            box-shadow: 0 1px 1px rgba(0,0,0,0.05); 
+        }
+        .user-message {
+            align-self: flex-end; 
+            background-color: #2196F3; 
+            color: white;
+            border-bottom-right-radius: 5px; 
+        }
+        .gemini-message {
+            align-self: flex-start; 
+            background-color: #f1f3f4; 
+            color: #3c4043;
+            border-bottom-left-radius: 5px; 
+        }
+
+        .chat-input-container {
+            padding: 15px 20px; 
+            border-top: 1px solid #f0f0f0; 
+            background-color: white;
+            display: flex; flex-direction: column; 
+            max-width: 800px; 
+            width: 100%;
+            margin: 0 auto; 
+        }
+        .chat-input {
+            display: flex; align-items: flex-end; width: 100%;
+        }
+        #user-input {
+            flex-grow: 1; 
+            padding: 12px 18px; 
+            border: 1px solid #ddd; 
+            border-radius: 25px; 
+            margin-right: 10px; 
+            outline: none; 
+            resize: none; 
+            min-height: 20px;
+            max-height: 150px; 
+            overflow-y: auto; 
+            line-height: 20px; 
+            font-size: 1em;
+            box-sizing: border-box;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        #user-input:focus {
+            border-color: #1a73e8;
+            box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.1);
+        }
+
+        #send-button {
+            background-color: #4285F4; 
+            color: white; 
+            border: none; 
+            padding: 10px; 
+            border-radius: 50%; 
+            cursor: pointer; 
+            transition: background-color 0.3s, transform 0.1s;
+            height: 44px; 
+            width: 44px; 
+            display: flex; 
+            align-items: center;
+            justify-content: center; 
+            margin-bottom: 0; 
+            min-width: 44px;
+        }
+        #send-button:hover { background-color: #1a73e8; }
+        #send-button:active { transform: scale(0.95); }
+        .loading-icon {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* ======================================= */
+        /* === Settings Overlay (Saved Info) === */
+        /* ======================================= */
+        #settings-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            background: white; 
+            z-index: 500; 
+            display: none;
+            flex-direction: column;
+        }
+        .settings-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+        }
+        .settings-header h2 {
+            margin: 0;
+            font-size: 1.4em;
+            color: #3c4043;
+        }
+        #settings-close-btn {
+            background: none; border: none; cursor: pointer; color: #5f6368;
+            padding: 5px; border-radius: 50%;
+        }
+        .settings-content {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 20px;
+            max-width: 800px; 
+            width: 100%;
+            margin: 0 auto;
+        }
+        .settings-item {
+            padding: 15px 0;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .settings-item-title { font-weight: bold; color: #3c4043; }
+        .settings-item-description { font-size: 0.9em; color: #777; margin-top: 5px; }
+        .settings-button-style {
+            background-color: white; 
+            border: 1px solid #ccc;
+            border-radius: 20px;
+            padding: 10px 15px;
+            cursor: pointer;
+            color: #3c4043;
+            transition: background-color 0.2s;
+            display: inline-flex;
+            align-items: center;
+            margin-right: 10px;
+            font-weight: 500;
+        }
+        .settings-button-style.primary {
+            background-color: #1a73e8;
+            color: white;
+            border-color: #1a73e8;
+        }
+        .settings-button-style.danger {
+            color: #d93025;
+            border-color: #ccc;
+            margin-right: 0;
+        }
+        .saved-info-item {
+            display: flex;
+            align-items: flex-start;
+            padding: 10px 0;
+            border-bottom: 1px dashed #eee;
+        }
+        .saved-info-text {
+            flex-grow: 1;
+            color: #3c4043;
+            padding: 5px;
+            border-radius: 8px;
+            outline: none;
+            min-height: 20px; 
+            line-height: 1.4;
+            transition: background-color 0.1s;
+        }
+        .saved-info-text:focus {
+            background-color: #f5f5f5;
+            border: 1px solid #ccc;
+            padding: 4px;
+        }
+        .info-action-btn {
+            background: none;
+            border: none;
+            color: #5f6368;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 50%;
+            transition: background-color 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .info-action-btn.delete-btn {
+            color: #d93025;
+        }
+    </style>
+</head>
+<body>
+
+<div class="chat-container">
+    <div class="chat-header">
+        <button class="menu-button" id="menu-toggle">
+            <span class="material-symbols-outlined menu-icon">menu</span>
+        </button>
+        <span class="header-title">J.Reel Chat</span>
+        <button class="settings-button" id="settings-toggle" style="margin-right: 5px;">
+            <span class="material-symbols-outlined settings-icon">settings</span>
+        </button>
+        <button class="search-button" id="search-toggle">
+            <span class="material-symbols-outlined search-icon">search</span>
+        </button>
+    </div>
+
+    <div id="settings-overlay">
+        <div class="settings-header">
+            <h2>จัดการข้อมูลที่บันทึกไว้ (Saved Info)</h2>
+            <button id="settings-close-btn">
+                <span class="material-symbols-outlined settings-icon" style="font-size: 28px;">close</span>
+            </button>
+        </div>
+        <div class="settings-content">
+            <div class="settings-item">
+                <div class="settings-item-info">
+                    <div class="settings-item-title">Shared Info Toggle (Simulated)</div>
+                    <div class="settings-item-description">
+                        Share info about your life and preferences to get more helpful responses.
+                    </div>
+                </div>
+                <span class="settings-toggle">
+                    <span class="material-symbols-outlined" style="color: #1a73e8; font-size: 32px; font-variation-settings: 'FILL' 1;">toggle_on</span> 
+                </span>
+            </div>
+            
+            <div class="settings-item" style="border-bottom: none; display: block; padding-bottom: 0;">
+                 <div class="settings-item-description" style="margin-bottom: 20px;">
+                    เพิ่มข้อมูลใหม่ที่นี่ หรือแก้ไขข้อมูลที่มีอยู่
+                </div>
+                <textarea id="new-info-input" placeholder="พิมพ์ข้อมูลที่คุณต้องการให้ Gemini จำ (เช่น: ฉันแพ้ถั่วลิสง)" 
+                  style="width: 100%; min-height: 50px; padding: 10px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; resize: vertical; margin-bottom: 10px; font-size: 1em;"></textarea>
+                  
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                        <button class="settings-button-style primary" id="add-info-btn">
+                            <span class="material-symbols-outlined" style="margin-right: 5px; font-size: 20px;">add</span> Add
+                        </button>
+                        <button class="settings-button-style" onclick="alert('แสดงตัวอย่าง (ฟังก์ชันยังไม่ทำงาน)');">Show examples</button>
+                    </div>
+                    <button class="settings-button-style danger" id="delete-all-info-btn">
+                        <span class="material-symbols-outlined" style="margin-right: 5px; font-size: 20px;">delete</span> Delete all
+                    </button>
+                </div>
+            </div>
+
+            <div class="settings-item" style="display: block; padding-top: 30px; border-bottom: none;">
+                <div class="settings-item-title">ข้อมูลที่ Gemini จำไว้</div>
+                <div id="saved-info-list" style="margin-top: 10px;">
+                    </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="side-menu">
+        <button id="new-chat-btn" class="menu-item" style="margin-top: 15px;">
+             <span class="material-symbols-outlined menu-icon" style="color:#1a73e8; margin-right: 15px;">edit</span> New chat
+             <span class="material-symbols-outlined" style="margin-left: auto; color:#5f6368;">crop_free</span>
+        </button>
+        <div class="menu-section">
+            <div class="menu-header">Recent</div>
+            <div id="recent-chats"></div>
+        </div>
+    </div>
+    <div id="menu-close-overlay"></div>
+
+    <div class="context-menu" id="chat-context-menu" style="position: fixed; background: white; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); padding: 5px; z-index: 300; display: none;">
+        <button id="pin-chat-btn" style="display: flex; align-items: center; padding: 8px 12px; border: none; background: none; width: 100%; text-align: left; border-radius: 8px;"><span class="material-symbols-outlined" style="margin-right: 10px; font-size: 20px;">push_pin</span> Pin</button>
+        <button id="rename-chat-btn" style="display: flex; align-items: center; padding: 8px 12px; border: none; background: none; width: 100%; text-align: left; border-radius: 8px;"><span class="material-symbols-outlined" style="margin-right: 10px; font-size: 20px;">edit</span> Rename</button>
+        <button id="delete-chat-btn" style="display: flex; align-items: center; padding: 8px 12px; border: none; background: none; width: 100%; text-align: left; color: #d93025; border-radius: 8px;"><span class="material-symbols-outlined" style="margin-right: 10px; font-size: 20px;">delete</span> Delete</button>
+    </div>
+
+    <div id="search-overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 400; display: none; flex-direction: column;">
+        <div id="search-bar-container" style="display: flex; align-items: center; padding: 10px 15px; border-bottom: 1px solid #f0f0f0;">
+            <button class="menu-button" style="color: #3c4043; margin-right: 10px;" id="search-close-btn">
+                <span class="material-symbols-outlined">arrow_back</span>
+            </button>
+            <input type="text" id="search-input" placeholder="Search chats or text..." style="flex-grow: 1; padding: 10px; border: none; outline: none; font-size: 1.1em;" />
+            <button class="menu-button" style="color: #3c4043; margin-left: 10px;" id="clear-search-btn">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        <div id="search-results" style="padding: 15px; flex-grow: 1; overflow-y: auto; max-width: 800px; width: 100%; margin: 0 auto;"></div>
+    </div>
+    
+    <div class="welcome-screen" id="welcome-screen" style="flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; color: #5f6368;">
+        <h1>Hello, J.Reel</h1>
+        <h2 style="font-weight: 400; font-size: 1.2em;">What should we do today?</h2>
+    </div>
+
+    <div class="chat-messages hidden" id="chat-messages"></div>
+
+    <div class="chat-input-container">
+        <div class="chat-input">
+            <button id="image-upload-button" title="Upload Image (Feature coming soon)" class="menu-button" style="margin-right: 5px;">
+                <span class="material-symbols-outlined" style="font-size: 24px;">attach_file</span>
+            </button>
+            <textarea id="user-input" placeholder="พิมพ์ข้อความของคุณ..." rows="1"></textarea>
+            <button id="send-button">
+                <span class="material-symbols-outlined" id="send-icon">send</span> 
+            </button>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // ******************************************************
+    // *** ส่วน JavaScript สำหรับเชื่อมต่อกับ Gemini API ***
+    // ******************************************************
+
+    // 1. ตั้งค่า API Key (ใช้ Key จำลองสำหรับการทดสอบ UI)
+    // NOTE: เปลี่ยน Key นี้เป็น Key จริงของคุณ หากต้องการใช้งานจริง
+    const GEMINI_API_KEY = "AIzaSyDqNbKf_yMQ5PZdR5sqMlUgxtpnTLyDqW4"; 
+    const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + GEMINI_API_KEY;
+
+    // 2. กำหนด Element ต่างๆ
+    const chatMessages = document.getElementById('chat-messages');
+    const userInput = document.getElementById('user-input'); 
+    const sendButton = document.getElementById('send-button');
+    const sendIcon = document.getElementById('send-icon'); 
+    const welcomeScreen = document.getElementById('welcome-screen');
+    const sideMenu = document.getElementById('side-menu');
+    const menuOverlay = document.getElementById('menu-close-overlay');
+    const recentChatsDiv = document.getElementById('recent-chats');
+    const searchOverlay = document.getElementById('search-overlay');
+    const searchInput = document.getElementById('search-input');
+    const searchResultsDiv = document.getElementById('search-results');
+    const settingsOverlay = document.getElementById('settings-overlay');
+    const contextMenu = document.getElementById('chat-context-menu');
+    const pinChatBtn = document.getElementById('pin-chat-btn');
+    const renameChatBtn = document.getElementById('rename-chat-btn');
+    const deleteChatBtn = document.getElementById('delete-chat-btn');
+    const clearSearchBtn = document.getElementById('clear-search-btn');
+    const headerTitle = document.querySelector('.header-title');
+    
+    // Elements สำหรับ Saved Info
+    const savedInfoList = document.getElementById('saved-info-list');
+    const newInfoInput = document.getElementById('new-info-input');
+    const addInfoBtn = document.getElementById('add-info-btn');
+    const deleteAllInfoBtn = document.getElementById('delete-all-info-btn');
+
+
+    // 3. ตัวแปรเก็บสถานะ (ใช้ localStorage ทั้งหมด)
+    let currentChatHistory = [];
+    let chats = JSON.parse(localStorage.getItem('jreel_chats')) || [];
+    let activeChatId = null; 
+    let currentChatKey = null; // ใช้สำหรับ Context Menu
+
+    // ข้อมูลส่วนตัวเริ่มต้น
+    const defaultUserInfo = [
+        { id: Date.now() + 1, text: '' },
+        { id: Date.now() + 2, text: '' }
+    ];
+    let savedUserInfo = JSON.parse(localStorage.getItem('jreel_saved_info')) || defaultUserInfo; 
+
+
+    // ************************************
+    // *** ฟังก์ชันจัดการ UI (Menu, Search, Settings) ***
+    // ************************************
+
+    function toggleMenu() {
+        sideMenu.classList.toggle('menu-open');
+        menuOverlay.style.display = sideMenu.classList.contains('menu-open') ? 'block' : 'none';
+        contextMenu.style.display = 'none'; 
+    }
+    
+    function toggleSearch() {
+        // ปิด Overlay อื่นๆ ก่อน
+        settingsOverlay.style.display = 'none'; 
+        sideMenu.classList.remove('menu-open');
+        menuOverlay.style.display = 'none';
+        
+        searchOverlay.style.display = searchOverlay.style.display === 'flex' ? 'none' : 'flex';
+        if (searchOverlay.style.display === 'flex') {
+            searchInput.focus();
+            performSearch(); // รันค้นหาทันทีเมื่อเปิด (เผื่อมีข้อความเดิมค้างอยู่)
+        } else {
+            searchInput.value = '';
+            searchResultsDiv.innerHTML = '';
+        }
+    }
+
+    function toggleSettings() {
+        const isOpening = settingsOverlay.style.display !== 'flex';
+        settingsOverlay.style.display = isOpening ? 'flex' : 'none';
+
+        if (isOpening) {
+            // ปิด Overlay อื่นๆ เมื่อเปิด Settings
+            sideMenu.classList.remove('menu-open'); 
+            menuOverlay.style.display = 'none';
+            searchOverlay.style.display = 'none';
+            renderSavedInfo(); 
+        }
+    }
+    
+    function setSendButtonState(isSending) {
+        if (isSending) {
+            sendIcon.textContent = 'autorenew'; 
+            sendIcon.classList.add('loading-icon');
+            sendButton.disabled = true;
+        } else {
+            sendIcon.textContent = 'send';
+            sendIcon.classList.remove('loading-icon');
+            sendButton.disabled = false;
+        }
+    }
+    
+    function autoResizeTextarea() {
+        userInput.style.height = 'auto'; 
+        userInput.style.height = userInput.scrollHeight + 'px';
+    }
+
+    function displayMessage(text, sender) {
+        const msgDiv = document.createElement('div');
+        msgDiv.classList.add('message');
+        msgDiv.classList.add(sender === 'user' ? 'user-message' : 'gemini-message');
+        msgDiv.textContent = text;
+        chatMessages.appendChild(msgDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    // *** ฟังก์ชันค้นหาจริง ***
+    function performSearch() {
+        const query = searchInput.value.trim().toLowerCase();
+        searchResultsDiv.innerHTML = '';
+        
+        if (query.length < 2) {
+            searchResultsDiv.innerHTML = '<div style="color:#777; padding: 10px;">พิมพ์อย่างน้อย 2 ตัวอักษรเพื่อค้นหาในประวัติแชททั้งหมด</div>';
+            return;
+        }
+
+        let resultsFound = [];
+
+        // Search through all chats
+        chats.forEach(chat => {
+            
+            // Search through history (skip system messages)
+            chat.history.filter(msg => msg.role !== 'system').forEach((msg, index) => {
+                if (msg.text.toLowerCase().includes(query)) {
+                    
+                    // Find snippet around the query for display
+                    const text = msg.text;
+                    const matchIndex = text.toLowerCase().indexOf(query);
+                    // 50 characters before/after
+                    const start = Math.max(0, matchIndex - 50); 
+                    const end = Math.min(text.length, matchIndex + query.length + 50);
+                    
+                    let snippet = text.substring(start, end);
+                    
+                    if (start > 0) snippet = '...' + snippet;
+                    if (end < text.length) snippet = snippet + '...';
+                    
+                    // Highlight the query (case insensitive)
+                    const highlightedSnippet = snippet.replace(new RegExp(query, 'gi'), match => `<strong style="background-color: #fce205; padding: 1px 0;">${match}</strong>`);
+
+                    resultsFound.push({
+                        chatId: chat.id,
+                        title: chat.title,
+                        type: msg.role,
+                        snippet: highlightedSnippet
+                    });
+                }
+            });
+        });
+
+        if (resultsFound.length === 0) {
+            searchResultsDiv.innerHTML = `<div style="color:#777; padding: 10px; font-style: italic;">ไม่พบผลลัพธ์สำหรับ <strong>"${searchInput.value}"</strong> ในประวัติแชท</div>`;
+            return;
+        }
+
+        const titleDiv = document.createElement('div');
+        titleDiv.style.cssText = 'margin-bottom: 15px; font-size: 1.1em; color: #3c4043;';
+        titleDiv.innerHTML = `<strong>พบ ${resultsFound.length} ผลลัพธ์</strong> สำหรับ "${searchInput.value}"`;
+        searchResultsDiv.appendChild(titleDiv);
+        
+        // Group results by chat
+        const groupedResults = resultsFound.reduce((acc, result) => {
+            if (!acc[result.chatId]) {
+                acc[result.chatId] = { id: result.chatId, title: result.title, results: [] };
+            }
+            acc[result.chatId].results.push(result);
+            return acc;
+        }, {});
+        
+        for (const chatId in groupedResults) {
+            const chatGroup = groupedResults[chatId];
+            
+            const groupHeader = document.createElement('div');
+            groupHeader.style.cssText = 'margin-top: 15px; padding: 10px; background-color: #f7f7f7; border-radius: 8px; cursor: pointer; border: 1px solid #eee; transition: background-color 0.1s;';
+            groupHeader.innerHTML = `
+                <div style="font-weight: bold; color: #1a73e8; font-size: 1.1em;">${chatGroup.title} <span style="font-weight: normal; color: #777; font-size: 0.9em;">(${chatGroup.results.length} ข้อความ)</span></div>
+            `;
+            groupHeader.onclick = () => { loadChat(chatId); toggleSearch(); };
+            searchResultsDiv.appendChild(groupHeader);
+            
+            chatGroup.results.forEach(result => {
+                 const resultItem = document.createElement('div');
+                 resultItem.style.cssText = 'padding: 8px 0 8px 10px; border-left: 3px solid #ccc; margin-top: 5px; font-size: 0.9em;';
+                 resultItem.innerHTML = `
+                    <div style="font-weight: 500; color: ${result.type === 'user' ? '#3c4043' : '#777'}; margin-bottom: 3px;">
+                        ${result.type === 'user' ? 'You' : 'J.Reel'}:
+                    </div>
+                    <div>${result.snippet}</div>
+                 `;
+                 searchResultsDiv.appendChild(resultItem);
+            });
+        }
+    }
+    
+    // ************************************
+    // *** ฟังก์ชันจัดการ Saved Info ***
+    // ************************************
+
+    function saveUserInfo() {
+        localStorage.setItem('jreel_saved_info', JSON.stringify(savedUserInfo));
+    }
+    function renderSavedInfo() {
+        savedInfoList.innerHTML = '';
+        if (savedUserInfo.length === 0) {
+            savedInfoList.innerHTML = '<div style="color:#777; padding: 10px 0; font-style: italic;">ไม่พบข้อมูลที่บันทึกไว้ คุณสามารถเพิ่มใหม่ได้ด้านบน</div>';
+            return;
+        }
+        savedUserInfo.forEach(info => {
+            const item = document.createElement('div');
+            item.className = 'saved-info-item';
+            const textDiv = document.createElement('div');
+            textDiv.className = 'saved-info-text';
+            textDiv.textContent = info.text;
+            textDiv.contentEditable = true;
+            textDiv.onblur = (e) => updateSavedInfo(info.id, e.target.textContent.trim());
+            const actionsDiv = document.createElement('div');
+            actionsDiv.className = 'saved-info-actions';
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'info-action-btn delete-btn';
+            deleteBtn.innerHTML = '<span class="material-symbols-outlined" style="font-size: 20px;">delete</span>';
+            deleteBtn.title = 'ลบรายการนี้';
+            deleteBtn.onclick = () => deleteSavedInfo(info.id);
+            actionsDiv.appendChild(deleteBtn);
+            item.appendChild(textDiv);
+            item.appendChild(actionsDiv);
+            savedInfoList.appendChild(item);
+        });
+    }
+    function addSavedInfo() {
+        const newText = newInfoInput.value.trim();
+        if (!newText) { alert('กรุณาพิมพ์ข้อความที่ต้องการบันทึก'); return; }
+        savedUserInfo.push({ id: Date.now(), text: newText });
+        saveUserInfo();
+        renderSavedInfo();
+        newInfoInput.value = '';
+        newInfoInput.focus();
+    }
+    function deleteSavedInfo(id) {
+        if (confirm('คุณแน่ใจหรือไม่ว่าต้องการลบข้อมูลนี้?')) {
+            savedUserInfo = savedUserInfo.filter(info => info.id === id ? false : true);
+            saveUserInfo();
+            renderSavedInfo();
+        }
+    }
+    function deleteAllSavedInfo() {
+        if (confirm('คุณแน่ใจหรือไม่ว่าต้องการลบข้อมูลที่บันทึกไว้ทั้งหมด?')) {
+            savedUserInfo = [];
+            saveUserInfo();
+            renderSavedInfo();
+        }
+    }
+    function updateSavedInfo(id, newText) {
+        if (!newText) { renderSavedInfo(); return; }
+        const index = savedUserInfo.findIndex(info => info.id === id);
+        if (index !== -1) {
+            savedUserInfo[index].text = newText;
+            saveUserInfo();
+        }
+    }
+
+    // ************************************
+    // *** ฟังก์ชันจัดการ Chat History และ Rename ***
+    // ************************************
+    
+    function generateUniqueId() { return 'chat_' + Date.now() + Math.random().toString(36).substring(2, 9); }
+
+    function saveCurrentChat(initialPrompt) {
+        if (!activeChatId || currentChatHistory.length <= 1) return;
+
+        const existingIndex = chats.findIndex(c => c.id === activeChatId);
+
+        // Get chat title based on the first user message, or keep existing title if present
+        const firstUserMsg = currentChatHistory.find(msg => msg.role === 'user');
+        let defaultChatTitle = 'New Chat';
+        if (firstUserMsg) {
+            defaultChatTitle = firstUserMsg.text.substring(0, 30) + (firstUserMsg.text.length > 30 ? '...' : '');
+        } else if (initialPrompt) {
+             defaultChatTitle = initialPrompt.substring(0, 30) + '...';
+        }
+        
+        const currentTitle = existingIndex !== -1 ? chats[existingIndex].title : defaultChatTitle;
+
+        const chatData = {
+            id: activeChatId,
+            title: currentTitle,
+            history: currentChatHistory,
+            timestamp: Date.now(),
+            pinned: existingIndex !== -1 ? chats[existingIndex].pinned : false
+        };
+
+        if (existingIndex !== -1) {
+            chats[existingIndex] = chatData;
+        } else {
+            chats.unshift(chatData);
+        }
+
+        localStorage.setItem('jreel_chats', JSON.stringify(chats));
+        renderRecentChats();
+    }
+
+    function loadChat(chatId) {
+        const chat = chats.find(c => c.id === chatId);
+        if (!chat) return;
+
+        saveCurrentChat(); 
+
+        activeChatId = chatId;
+        currentChatHistory = chat.history;
+        chatMessages.innerHTML = '';
+        
+        // Update Header Title
+        headerTitle.textContent = chat.title; 
+
+        chat.history.forEach(msg => {
+            if (msg.role !== 'system') { 
+                displayMessage(msg.text, msg.role);
+            }
+        });
+        welcomeScreen.classList.add('hidden');
+        chatMessages.classList.remove('hidden');
+        userInput.focus();
+        autoResizeTextarea();
+        renderRecentChats();
+        toggleMenu(); 
+    }
+    
+    function startNewChat() { 
+        saveCurrentChat(); 
+        activeChatId = generateUniqueId();
+        currentChatHistory = [];
+        chatMessages.innerHTML = '';
+        
+        // Reset Header Title
+        headerTitle.textContent = 'J.Reel Chat';
+
+        const welcomeMessage = "สวัสดีเพื่อน! ฉันคือ J.Reel พร้อมแล้วที่จะคุยแบบเป็นกันเองตามข้อมูลที่นายบันทึกไว้!";
+        const initialMessage = { role: 'model', text: welcomeMessage };
+        currentChatHistory.push(initialMessage);
+        
+        displayMessage(initialMessage.text, 'gemini');
+        welcomeScreen.classList.add('hidden');
+        chatMessages.classList.remove('hidden');
+        userInput.focus();
+        autoResizeTextarea();
+        renderRecentChats();
+    }
+
+    function renderRecentChats() { 
+        recentChatsDiv.innerHTML = '';
+        
+        // Sort by pinned first, then by timestamp
+        const sortedChats = [...chats].sort((a, b) => {
+            if (a.pinned && !b.pinned) return -1;
+            if (!a.pinned && b.pinned) return 1;
+            return b.timestamp - a.timestamp;
+        });
+
+        if (sortedChats.length === 0) {
+            recentChatsDiv.innerHTML = '<div class="menu-item" style="cursor: default; opacity: 0.7;">ไม่มีประวัติการสนทนา</div>';
+            return;
+        }
+
+        sortedChats.forEach(chat => {
+            const item = document.createElement('div');
+            item.className = `chat-item ${chat.id === activeChatId ? 'active' : ''}`;
+            item.title = chat.title;
+            item.innerHTML = `
+                <div class="chat-title" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80%;">
+                    ${chat.pinned ? '<span class="material-symbols-outlined" style="font-size: 18px; margin-right: 5px; color: #777; vertical-align: middle; font-variation-settings: \'FILL\' 1;">push_pin</span>' : ''} 
+                    ${chat.title}
+                </div>
+                <button class="chat-options-button" data-chat-id="${chat.id}" style="border: none; background: none; color: #5f6368; cursor: pointer; padding: 5px; margin-right: -10px; border-radius: 50%; display: flex; align-items: center;">
+                    <span class="material-symbols-outlined" style="font-size: 20px;">more_vert</span>
+                </button>
+            `;
+            
+            item.onclick = (e) => {
+                if (!e.target.closest('.chat-options-button') && chat.id !== activeChatId) {
+                    loadChat(chat.id);
+                }
+            };
+
+            item.querySelector('.chat-options-button').onclick = (e) => {
+                e.stopPropagation(); 
+                currentChatKey = chat.id;
+                showContextMenu(e.currentTarget);
+            };
+
+            recentChatsDiv.appendChild(item);
+        });
+    }
+
+    function showContextMenu(button) {
+        const rect = button.getBoundingClientRect();
+        
+        let top = rect.top + window.scrollY - 10;
+        let left = rect.left - contextMenu.offsetWidth - 10;
+        
+        if (left < 0) left = rect.left + rect.width + 5; 
+        
+        contextMenu.style.top = `${top}px`;
+        contextMenu.style.left = `${left}px`;
+        contextMenu.style.display = 'block';
+
+        const chat = chats.find(c => c.id === currentChatKey);
+        pinChatBtn.innerHTML = chat && chat.pinned 
+            ? '<span class="material-symbols-outlined" style="margin-right: 10px; font-size: 20px; font-variation-settings: \'FILL\' 1;">push_pin</span> Unpin chat'
+            : '<span class="material-symbols-outlined" style="margin-right: 10px; font-size: 20px;">push_pin</span> Pin chat';
+    }
+
+
+    // ************************************
+    // *** ฟังก์ชันส่งข้อความ (แกนหลัก) ***
+    // ************************************
+    async function sendMessage() {
+        const prompt = userInput.value.trim();
+        if (!prompt) return;
+
+        if (!activeChatId) {
+            startNewChat();
+            // Since startNewChat calls saveCurrentChat, activeChatId will be set.
+        }
+
+        displayMessage(prompt, 'user');
+        
+        // 1. สร้าง Context จาก savedUserInfo
+        const contextLines = savedUserInfo.map(info => info.text);
+        const contextPromptText = contextLines.length > 0 ? 
+            `นี่คือข้อมูลเกี่ยวกับฉัน/ความต้องการของฉันที่คุณต้องจำไว้เสมอในการตอบคำถาม: ${contextLines.join('. ')}` 
+            : "ตอบคำถามด้วยน้ำเสียงที่เป็นมิตรแบบเพื่อน"; 
+
+        // Context messages are added to the content structure, not the history list.
+        const contextMessages = [
+            { role: 'user', text: contextPromptText },
+            { role: 'model', text: "รับทราบเพื่อน! พร้อมลุย!" }
+        ];
+
+        currentChatHistory.push({ role: 'user', text: prompt });
+        userInput.value = ''; 
+        autoResizeTextarea(); 
+        setSendButtonState(true); 
+
+        const indicator = document.createElement('div');
+        indicator.classList.add('typing-indicator');
+        indicator.textContent = 'J.Reel กำลังพิมพ์...';
+        chatMessages.appendChild(indicator);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+
+        try {
+            // 2. รวม Context เข้ากับ History จริง
+            const contents = contextMessages.concat(currentChatHistory).map(msg => ({ role: msg.role, parts: [{ text: msg.text }] }));
+
+            const response = await fetch(GEMINI_API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contents: contents }) 
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error.message || `HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            
+            chatMessages.removeChild(indicator);
+
+            const geminiResponseText = data.candidates[0].content.parts[0].text;
+            const modelMessage = { role: 'model', text: geminiResponseText };
+            currentChatHistory.push(modelMessage);
+            displayMessage(modelMessage.text, 'gemini');
+            
+            saveCurrentChat(prompt); // Save chat history and title if newly created
+
+        } catch (error) {
+           
+        } finally {
+            setSendButtonState(false); 
+            userInput.focus();
+        }
+    }
+
+
+    // ************************************
+    // *** Event Listeners และ Initializers ***
+    // ************************************
+    
+    document.getElementById('menu-toggle').addEventListener('click', toggleMenu);
+    document.getElementById('menu-close-overlay').addEventListener('click', toggleMenu);
+    document.getElementById('search-toggle').addEventListener('click', toggleSearch);
+    document.getElementById('search-close-btn').addEventListener('click', toggleSearch);
+    document.getElementById('new-chat-btn').addEventListener('click', () => { startNewChat(); toggleMenu(); });
+
+    // Settings Events
+    document.getElementById('settings-toggle').addEventListener('click', toggleSettings);
+    document.getElementById('settings-close-btn').addEventListener('click', toggleSettings); 
+    addInfoBtn.addEventListener('click', addSavedInfo);
+    deleteAllInfoBtn.addEventListener('click', deleteAllSavedInfo);
+    
+    // Chat Input Events
+    sendButton.addEventListener('click', sendMessage);
+    userInput.addEventListener('input', autoResizeTextarea); 
+    userInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey && !sendButton.disabled) { e.preventDefault(); sendMessage(); }
+    });
+    
+    // Search Events
+    document.getElementById('clear-search-btn').addEventListener('click', () => { searchInput.value = ''; performSearch(); });
+    searchInput.addEventListener('input', performSearch);
+
+
+    // Context Menu Actions
+    pinChatBtn.addEventListener('click', () => {
+        const chatIndex = chats.findIndex(c => c.id === currentChatKey);
+        if (chatIndex !== -1) {
+            chats[chatIndex].pinned = !chats[chatIndex].pinned;
+            localStorage.setItem('jreel_chats', JSON.stringify(chats));
+            renderRecentChats();
+        }
+        contextMenu.style.display = 'none';
+    });
+    
+    // *** ฟังก์ชันเปลี่ยนชื่อแชต ***
+    renameChatBtn.addEventListener('click', () => {
+        const chat = chats.find(c => c.id === currentChatKey);
+        if (!chat) return;
+        
+        contextMenu.style.display = 'none';
+
+        const newTitle = prompt(`เปลี่ยนชื่อแชท "${chat.title}" เป็น:`, chat.title);
+        
+        if (newTitle && newTitle.trim() !== '' && newTitle.trim() !== chat.title) {
+            const trimmedTitle = newTitle.trim().substring(0, 50); 
+            chat.title = trimmedTitle;
+            localStorage.setItem('jreel_chats', JSON.stringify(chats));
+            renderRecentChats();
+            
+            // อัพเดท Title ใน Header ถ้าเป็นแชทปัจจุบัน
+            if (currentChatKey === activeChatId) {
+                 headerTitle.textContent = trimmedTitle;
+            }
+        }
+    });
+
+    deleteChatBtn.addEventListener('click', () => {
+        if (confirm("คุณแน่ใจหรือไม่ว่าต้องการลบแชทนี้?")) {
+            chats = chats.filter(c => c.id !== currentChatKey);
+            localStorage.setItem('jreel_chats', JSON.stringify(chats));
+            
+            if (currentChatKey === activeChatId) {
+                startNewChat(); 
+            } else {
+                renderRecentChats();
+            }
+        }
+        contextMenu.style.display = 'none';
+    });
+
+    // ปิด Context Menu เมื่อคลิกที่อื่น
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.context-menu') && !e.target.closest('.chat-options-button')) {
+            contextMenu.style.display = 'none';
+        }
+    });
+
+
+    function initialize() {
+        renderRecentChats();
+        
+        // โหลดแชทล่าสุด (ถ้ามี) หรือเริ่มใหม่
+        if (chats.length > 0) {
+            loadChat(chats[0].id);
+        } else {
+            startNewChat(); 
+        }
+        userInput.focus();
+        autoResizeTextarea(); 
+    }
+    
+    initialize();
+
+</script>
+</body>
+</html>
